@@ -85,6 +85,7 @@ pub fn encrypt_bytes(
 }
 
 pub fn client_encrypt_and_server_decrypt_test() -> Result<(), Box<dyn std::error::Error>> {
+    println!("running test client_encrypt_and_server_decrypt_test");
     let test_key = b"0123456789abcdef0123456789abcdef";
     let associated_data = b"";
 
