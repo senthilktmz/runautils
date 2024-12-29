@@ -100,8 +100,6 @@ pub fn client_encrypt_and_server_decrypt_test() -> Result<(), Box<dyn std::error
     Ok(())
 }
 
-
-
 pub fn encrypt_payload(
     key: &[u8; 32],
     plain_text: &[u8],

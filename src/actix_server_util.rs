@@ -1,10 +1,9 @@
-use actix_web::{web, App, HttpResponse, HttpServer};
 use actix_cors::Cors;
+use actix_web::{web, App, HttpResponse, HttpServer};
+use std::any::Any;
 use std::future::Future;
 use std::pin::Pin;
-use std::any::Any;
 use std::sync::Arc;
-
 
 #[derive(Clone)]
 pub struct ServerContext {
@@ -16,19 +15,19 @@ pub struct ServerContext {
 #[derive(Clone)]
 pub struct Route {
     pub path: &'static str,
-    pub get_handler: Option<fn() -> Pin<Box<dyn Future<Output=HttpResponse>>>>,
+    pub get_handler: Option<fn() -> Pin<Box<dyn Future<Output = HttpResponse>>>>,
     pub post_handler: Option<
         fn(
             web::Json<String>,
             &'static str,
             Arc<ServerContext>,
-        ) -> Pin<Box<dyn Future<Output=HttpResponse>>>,
+        ) -> Pin<Box<dyn Future<Output = HttpResponse>>>,
     >,
     pub websocket_handler: Option<
         fn(
             actix_web::HttpRequest,
             actix_web::web::Payload,
-        ) -> Pin<Box<dyn Future<Output=Result<HttpResponse, actix_web::Error>>>>,
+        ) -> Pin<Box<dyn Future<Output = Result<HttpResponse, actix_web::Error>>>>,
     >,
 }
 
@@ -60,31 +59,29 @@ pub async fn serve_requests(
             ])
             .max_age(3600);
 
-        App::new()
-            .wrap(cors)
-            .configure(|cfg| {
-                for route in routes_list {
-                    if let Some(get_handler) = route.get_handler {
-                        cfg.service(web::resource(route.path).route(web::get().to(get_handler)));
-                    }
-
-                    if let Some(post_handler) = route.post_handler {
-                        let server_context = server_context.clone();
-                        cfg.service(
-                            web::resource(route.path).route(web::post().to(move |body: web::Json<String>| {
-                                let server_context = server_context.clone();
-                                async move { post_handler(body, route.path, server_context).await }
-                            })),
-                        );
-                    }
-
-                    if let Some(ws_handler) = route.websocket_handler {
-                        cfg.service(web::resource(route.path).route(web::get().to(ws_handler)));
-                    }
+        App::new().wrap(cors).configure(|cfg| {
+            for route in routes_list {
+                if let Some(get_handler) = route.get_handler {
+                    cfg.service(web::resource(route.path).route(web::get().to(get_handler)));
                 }
-            })
+
+                if let Some(post_handler) = route.post_handler {
+                    let server_context = server_context.clone();
+                    cfg.service(web::resource(route.path).route(web::post().to(
+                        move |body: web::Json<String>| {
+                            let server_context = server_context.clone();
+                            async move { post_handler(body, route.path, server_context).await }
+                        },
+                    )));
+                }
+
+                if let Some(ws_handler) = route.websocket_handler {
+                    cfg.service(web::resource(route.path).route(web::get().to(ws_handler)));
+                }
+            }
+        })
     })
-        .bind(host_addr)?
-        .run()
-        .await
+    .bind(host_addr)?
+    .run()
+    .await
 }
