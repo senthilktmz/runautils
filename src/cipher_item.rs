@@ -100,7 +100,9 @@ pub fn client_encrypt_and_server_decrypt_test() -> Result<(), Box<dyn std::error
     Ok(())
 }
 
-fn encrypt_payload(
+
+
+pub fn encrypt_payload(
     key: &[u8; 32],
     plain_text: &[u8],
     associated_data: &[u8],
@@ -119,7 +121,7 @@ fn encrypt_payload(
     Ok(json_str)
 }
 
-fn decrypt_payload(
+pub fn decrypt_payload(
     json_str: String,
     test_key: &[u8; 32],
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -129,6 +131,18 @@ fn decrypt_payload(
     let d = ci.decrypt(key)?;
     println!("{}", String::from_utf8(d)?);
     Ok(())
+}
+
+pub fn get_decrypted_payload(
+    json_str: String,
+    test_key: &[u8; 32],
+) -> Result<String, Box<dyn std::error::Error>> {
+    println!("Decrypting {} bytes", json_str.len());
+    let ci: CipherItem<String> = serde_json::from_str(json_str.as_str())?;
+    let key = <Key<Aes256Gcm>>::from(aes_gcm_key_from_string_literal(test_key));
+    let decrypted_bytes = ci.decrypt(key)?;
+    let decrypted_string = String::from_utf8(decrypted_bytes)?;
+    Ok(decrypted_string)
 }
 
 const RUN_BASH_SCRIPT_PAYLOAD01: &str = r#"{
