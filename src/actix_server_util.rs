@@ -20,7 +20,7 @@ pub struct Route {
         fn(
             web::Json<String>,
             &'static str,
-            Arc<ServerContext>,
+            Arc<Box<dyn Any + Send + Sync>>,
         ) -> Pin<Box<dyn Future<Output = HttpResponse>>>,
     >,
     pub websocket_handler: Option<
@@ -31,19 +31,13 @@ pub struct Route {
     >,
 }
 
-pub async fn serve_requests(
+pub async fn serve_requests (
     routes_list: Vec<Route>,
     tmp_work_dir: String,
     tmp_port: String,
-    tmp_dependencies: Arc<Box<dyn Any + Send + Sync>>,
+    server_context: Arc<Box<dyn Any + Send + Sync>>,
 ) -> std::io::Result<()> {
     let host_addr = format!("127.0.0.1:{}", tmp_port);
-
-    let server_context = Arc::new(ServerContext {
-        work_dir: tmp_work_dir,
-        port: tmp_port,
-        dependencies: tmp_dependencies.clone(),
-    });
 
     println!("Starting server and serving on http://{}", host_addr);
 
