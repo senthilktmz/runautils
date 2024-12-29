@@ -1,12 +1,15 @@
 use actix_web::{web, App, HttpResponse, HttpServer};
 use std::future::Future;
 use std::pin::Pin;
+use std::any::Any;
 use std::sync::Arc;
+
 
 #[derive(Clone)]
 pub struct ServerContext {
     pub work_dir: String,
     pub port: String,
+    pub dependencies :Arc<Box<dyn Any + Send + Sync>>,
 }
 
 #[derive(Clone)]
@@ -30,14 +33,16 @@ pub struct Route {
 
 pub async fn serve_requests(
     routes_list: Vec<Route>,
-    work_dir: String,
+    tmp_work_dir: String,
     tmp_port: String,
+    tmp_dependencies :Arc<Box<dyn Any + Send + Sync>>
 ) -> std::io::Result<()> {
     println!("Starting server");
 
     let server_context = Arc::new(ServerContext {
+        work_dir: tmp_work_dir,
         port: tmp_port,
-        work_dir,
+        dependencies: tmp_dependencies.clone(),
     });
 
     HttpServer::new(move || {
