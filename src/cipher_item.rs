@@ -1,9 +1,9 @@
 use base64::{engine::general_purpose, Engine};
-use hex;
+// use hex;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
-use aes_gcm::aead::consts::U12;
+//use aes_gcm::aead::consts::U12;
 use aes_gcm::aead::{Aead, Payload};
 use aes_gcm::{
     aead::{AeadCore, KeyInit, OsRng},
@@ -104,7 +104,7 @@ fn encrypt_payload(
     key: &[u8; 32],
     plain_text: &[u8],
     associated_data: &[u8],
-) -> Result<((String)), Box<dyn std::error::Error>> {
+) -> Result<String, Box<dyn std::error::Error>> {
     println!("Encrypting {} bytes now", plain_text.len());
 
     let associated_data = b"";
@@ -116,7 +116,7 @@ fn encrypt_payload(
     let json_str = ci.to_json()?;
     println!("encrypted request data ");
     println!("{}", json_str);
-    Ok((json_str))
+    Ok(json_str)
 }
 
 fn decrypt_payload(
