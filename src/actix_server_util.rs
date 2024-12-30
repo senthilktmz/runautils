@@ -1,9 +1,12 @@
+
 use actix_cors::Cors;
 use actix_web::{web, App, HttpResponse, HttpServer};
 use std::any::Any;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
+use crate::cipher_item::encrypt_payload;
+use reqwest::blocking::Client;
 
 #[derive(Clone)]
 pub struct ServerContext {
@@ -78,4 +81,26 @@ pub async fn serve_requests (
     .bind(host_addr)?
     .run()
     .await
+}
+
+pub fn post_http_request(url :&str, plain_text_payload : &str,
+                     key : &[u8; 32],
+                     associated_data : &[u8] ) -> reqwest::Result<reqwest::blocking::Response> {
+
+    let encrypted_payload = encrypt_payload(key, plain_text_payload.as_bytes(), associated_data)
+        .expect("Encryption failed");
+
+    let client = Client::new();
+    let formatted_body = to_json_literal_string(encrypted_payload.as_str()); //  format!("\"{}\"", encrypted_payload);
+
+    client
+        .post(url)
+        .header("Content-Type", "application/json")
+        .body(formatted_body) // Wrap in quotes to make it a JSON string
+        .send()
+}
+
+pub fn to_json_literal_string(payload: &str) -> String {
+    let escaped_payload = payload.replace("\"", "\\\"");
+    format!("\"{}\"", escaped_payload)
 }
