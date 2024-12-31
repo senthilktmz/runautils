@@ -9,14 +9,13 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
 pub struct ServerStateStore {
-    //pub state: HashMap<String, Arc<Box<dyn Any + Send + Sync>>>,//HashMap<String, String>,
-    pub state: Arc<HashMap<String, Arc<Box<dyn Any + Send + Sync>>>>,//HashMap<String, String>,
+    pub state: Arc<Mutex<HashMap<String, Arc<Box<dyn Any + Send + Sync>>>>>,//HashMap<String, String>,
 }
 
 impl ServerStateStore {
     pub fn new() -> Self {
         Self {
-            state: Arc::new(HashMap::new()),
+            state: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
