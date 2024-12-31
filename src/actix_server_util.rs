@@ -1,4 +1,3 @@
-
 use actix_cors::Cors;
 use actix_web::{web, App, HttpResponse, HttpServer};
 use std::any::Any;
@@ -9,7 +8,7 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
 pub struct ServerStateStore {
-    pub state: Arc<Mutex<HashMap<String, Arc<Box<dyn Any + Send + Sync>>>>>,//HashMap<String, String>,
+    pub state: Arc<Mutex<HashMap<String, Arc<Box<dyn Any + Send + Sync>>>>>, //HashMap<String, String>,
 }
 
 impl ServerStateStore {
@@ -34,12 +33,13 @@ pub struct Route {
     >,
     pub websocket_handler: Option<
         fn(
-            actix_web::HttpRequest,
-            actix_web::web::Payload,
+            req: actix_web::HttpRequest,
+            stream: actix_web::web::Payload,
+            server_context: Arc<Box<dyn Any + Send + Sync>>,
+            server_state_store: Arc<Mutex<ServerStateStore>>,
         ) -> Pin<Box<dyn Future<Output = Result<HttpResponse, actix_web::Error>>>>,
     >,
 }
-
 
 pub async fn serve_requests(
     routes_list: Vec<Route>,
@@ -91,13 +91,29 @@ pub async fn serve_requests(
                     )));
                 }
 
+                /*
                 if let Some(ws_handler) = route.websocket_handler {
                     cfg.service(web::resource(route.path).route(web::get().to(ws_handler)));
+                }*/
+
+                if let Some(ws_handler) = route.websocket_handler {
+                    let server_context = server_context.clone();
+                    let server_state_store = server_state_store.clone();
+
+                    cfg.service(web::resource(route.path).route(web::get().to(
+                        move |req: actix_web::HttpRequest, stream: actix_web::web::Payload| {
+                            let server_context = server_context.clone();
+                            let server_state_store = server_state_store.clone();
+                            async move {
+                                ws_handler(req, stream, server_context, server_state_store).await
+                            }
+                        },
+                    )));
                 }
             }
         })
     })
-        .bind(host_addr)?
-        .run()
-        .await
+    .bind(host_addr)?
+    .run()
+    .await
 }
